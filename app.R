@@ -1,11 +1,25 @@
 
 library(shiny)
 hepamorphosisdata <- reactiveValues()
-hepamorphosisdata$singlecell <- readRDS("data/220503_liver_full-seurat_updated.rds")
-hepamorphosisdata$protmatrix<- readRDS("data/NormalizedMatrix.rds")
+
+hepamorphosisdata$protmatrix<- readRDS("data/NormalizedMatrix.rds") |>
+  as.data.frame() |>
+  dplyr::select(!Protein.Ids) |>
+  tidyr::pivot_longer(cols = !Genes,values_to = "Abundance",names_to = "ID") |>
+  dplyr::mutate(Group = stringr::str_extract(ID, "^[:alpha:]+")) |>
+  dplyr::mutate(Group = case_when(
+    Group == "CS"~ "Cell Susp",
+    Group == "PH"~"Prim Hep",
+    .default = as.character(Group)
+  )) |>
+  dplyr::mutate(Group = factor(Group, levels = c("Liver", "Cell Susp", "Prim Hep"))) |>
+  dplyr::filter(!Genes == "")
+
 hepamorphosisdata$rnamatrix<- readRDS("data/pseudocounts.rds")
 hepamorphosisdata$protdeg <- readRDS("data/DAPResults.rds")
 hepamorphosisdata$rnadeg <- readRDS("data/pseudodeg.rds")
+
+#annotate the proteomics matrix
 
 # Define UI
 ui <- fluidPage(
@@ -17,7 +31,7 @@ ui <- fluidPage(
                      homeui("home")),
             #Home is a welcome page that presents the concept for the app
             tabPanel(title = "GeneExplorer",
-                     geneexplorerui("genexplorer")),
+                     geneexplorerui("geneexplorer")),
             #Geneexplorer allows the investigation of specific genes/proteins
             tabPanel(title = "Correlator",
                      correlatorui("correlator")),
