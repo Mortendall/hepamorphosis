@@ -6,3 +6,5 @@ renv
 data
 .Rprofile
 .Rbuildignore
+_dataimportfunctions.R
+pseudocountshepatocytes.rds

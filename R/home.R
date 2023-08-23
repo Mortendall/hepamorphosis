@@ -9,10 +9,12 @@ homeui <- function(id){
                 and single-nucleus RNAseq data from full liver, freshly
                 isolated hepatocytes that has been cultured for 24h on
                 collagen"),
-             h4("Written by Morten Dall, Staff Scientist, from the Novo
+             h4("As the datasets are quite large, it takes some time for the
+                tabs to load. Sorry about the inconvenience!"),
+             h6("Written by Morten Dall, Staff Scientist, from the Novo
                 Nordisk Foundation Center for Basic Metabolic Research,
                 University of Copenhagen"),
-             h4("For comments or questions, please contact dall@sund.ku.dk"))
+             h6("For comments or questions, please contact dall@sund.ku.dk"))
     )
   )
 }

@@ -8,7 +8,11 @@ geneexplorerui <- function(id){
   fluidPage(
     fluidRow(
       column(6,
-             withSpinner(uiOutput(outputId = ns("geneselector")))
+             actionButton(ns("loadsinglecell"),
+                          label = "Load single cell data"),
+             shiny::selectizeInput(inputId = ns("genelist"),
+                                   label = "Select gene from single cell dataset",
+                                   choices = NULL)
     ),     column(6,
              plotOutput(ns("featureplot"))
              )),
@@ -27,15 +31,27 @@ geneexplorer <- function(id, data, parent_session){
     function(input,output, session){
       ns <- NS(id)
       req(data)
-      data$singlecell <- readRDS("data/updatedsinglecell.rds")
-      ##Gene selector
+      geneselectormenu <- readRDS(here::here("data/geneselectormenu.rds"))
+      shiny::updateSelectizeInput(session,
+                                  "genelist",
+                                  choices = geneselectormenu,
+                                  selected = "Tbc1d4",
+                                  server = TRUE)
+
+      observeEvent(input$loadsinglecell,{
+        progress <- shiny::Progress$new()
+        on.exit(progress$close())
+        progress$set(message = "Loading Data, this might take a while...", value  = 0)
+        data$singlecell <- readRDS("data/updatedsinglecell.rds")
+        progress$inc(1/1, detail = "Loading Done!")
+      })
+
+      ##Gene selector list is based on the following code:
       # Generates a list of genes in dropdown menu based on what genes are found
       #in the single cell dataset
-      output$geneselector <- renderUI({
-        selectizeInput(inputId = ns("genelist"),
-                    label = "Select gene from single cell dataset",
-                    choices = rownames(data$singlecell))
-        })
+      # singlecell <- readRDS("data/updatedsinglecell.rds")
+      # geneselectormenu <- rownames(singlecell)
+      # saveRDS(geneselectormenu, here::here("data/geneselectormenu.rds"))
 
 
       #function checks if gene input in gene list changes. It then
@@ -62,6 +78,7 @@ geneexplorer <- function(id, data, parent_session){
           })
         }
         else{
+          req(data$singlecell)
           output$proteomicsviolin <- renderUI({
               h4(paste(input$genelist,"  is not found in the proteomics dataset", sep = ""))
           })
@@ -88,7 +105,7 @@ geneexplorer <- function(id, data, parent_session){
                 axis.title.x = element_blank(),
                 plot.title = element_text(size = 18,
                                           hjust = 0.5))+
-          ggtitle(input$genelist)
+          ggtitle(paste(input$genelist, " - Protein Abundance", sep = ""))
 
       })
 
@@ -105,7 +122,7 @@ geneexplorer <- function(id, data, parent_session){
                                           cols = wesanderson::wes_palette(7,
                                                                           name = "FantasticFox1",
                                                                           type = "continuous"),
-                                          label.box = T) +
+                                          label.box = F) +
           ggplot2::ggtitle("DimPlot By Cell Type") +
           ggplot2::theme(
             plot.title = ggplot2::element_text(hjust = 0.5,

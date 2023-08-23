@@ -1,7 +1,10 @@
 
 library(shiny)
+#create the reactive object that will contain all the data for the app
 hepamorphosisdata <- reactiveValues()
 
+#load in proteomicsdata. It needs to be reformatted so it is displayed
+#correctly
 hepamorphosisdata$protmatrix<- readRDS("data/NormalizedMatrix.rds") |>
   as.data.frame() |>
   dplyr::select(!Protein.Ids) |>
@@ -15,11 +18,23 @@ hepamorphosisdata$protmatrix<- readRDS("data/NormalizedMatrix.rds") |>
   dplyr::mutate(Group = factor(Group, levels = c("Liver", "Cell Susp", "Prim Hep"))) |>
   dplyr::filter(!Genes == "")
 
-hepamorphosisdata$rnamatrix<- readRDS("data/pseudocounts.rds")
-hepamorphosisdata$protdeg <- readRDS("data/DAPResults.rds")
-hepamorphosisdata$rnadeg <- readRDS("data/pseudodeg.rds")
+hepamorphosisdata$rnamatrix<- readRDS("data/pseudohepanormalized.rds") |>
+  as.data.frame() |>
+  tidyr::pivot_longer(cols = -Gene,
+                      values_to = "Expression",
+                      names_to = "Sample") |>
+  dplyr::mutate(Group = stringr::str_extract(Sample, "(?<=_)[:alpha:]+")) |>
+  dplyr::mutate(Group = factor(Group, levels = c("Central", "Portal"))) |>
+  dplyr::filter(!Gene == "")
 
-#annotate the proteomics matrix
+hepamorphosisdata$rnadeg <- readRDS("data/pseudoDEGhepasubset.rds")
+
+
+#load in differentially expressed genes and differentially abundant proteins
+#and create a list that contains all three comparisons
+
+hepamorphosisdata$correlation <- readRDS("data/correlationdata.rds")
+
 
 # Define UI
 ui <- fluidPage(
@@ -44,7 +59,7 @@ ui <- fluidPage(
 
 )
 
-# Define server logic
+# Define server logic. Built a modular server
 server <- function(input, output, session) {
   parent_session <- session
   home("home", hepamorphosisdata, parent_session)
