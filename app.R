@@ -73,6 +73,8 @@ server <- function(input, output, session) {
   #and create a list that contains all three comparisons
 
   hepamorphosisdata$correlation <- readRDS("data/correlationdata.rds")
+  #rename to more pleasing names
+
 
   parent_session <- session
   home("home", hepamorphosisdata, parent_session)

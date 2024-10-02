@@ -18,6 +18,7 @@ Imports:
     shinycssloaders,
     wesanderson,
     bslib,
-    shinyWidgets
+    shinyWidgets,
+    viridis
 Depends: 
     tidyverse

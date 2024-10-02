@@ -1,23 +1,37 @@
 library(shiny)
 zonatorui <- function(id){
   ns <- NS(id)
-  fluidPage(
-    fluidRow(
-      column(4,
-             actionButton(ns("loadhepatocytes"),
-                          label = "Load hepatocyte data"),
-             shiny::selectizeInput(inputId = ns("zonegenelist"),
-                                   label = "Select gene from single cell dataset",
-                                   choices = NULL)
-             ,
-             uiOutput(ns("RNAviolin")),
-             tableOutput(ns("stats"))),
-      column(8,
-             plotOutput(ns("zonefeatureplot")),
-             plotOutput(ns("zoneidentifier"))
-      )
-    )
-  )
+
+  bslib::page_sidebar(sidebar =
+                        bslib::sidebar(actionButton(ns("loadhepatocytes"),
+                                                    label = "Load hepatocyte data"),
+                                       shiny::selectizeInput(inputId = ns("zonegenelist"),
+                                                             label = "Select gene from single cell dataset",
+                                                             choices = NULL),
+                                       bslib::tooltip(bsicons::bs_icon("info-circle",
+                                                                       title = "About Zonator"),
+                                                      "In zonator, all hepatocytes are labeled as either portal or central,
+                                                      which is a simplification. However, this allows you to get an estimate
+                                                      whether your target of interest is primarily expressed in either of these areas")),
+                      bslib::layout_columns(col_widths = c(6,6),
+                                            row_heights = c(2,2),
+                                            bslib::card(bslib::card_title("Gene Expression",
+                                                                          container = htmltools::h3),
+                                                        bslib::card_body(plotOutput(ns("zonefeatureplot"))),
+                                                        full_screen = T,
+                                                        align = "center"
+                                            ),
+                                            bslib::card(bslib::card_title("Reference plot for cell types",
+                                                                          container = htmltools::h3),
+                                                        bslib::card_body( plotOutput(ns("zoneidentifier")),
+                                                        align = "center"
+                                            )),
+                                            bslib::card(bslib::card_title("Differential expression across zones",
+                                                                          container = htmltools::h3),
+                                                        bslib::card_body(uiOutput(ns("RNAviolin")),
+                                                                         tableOutput(ns("stats")))),
+                                                        align = "center"))
+
 }
 
 zonator <- function(id, data, parent_session){
@@ -77,12 +91,14 @@ zonator <- function(id, data, parent_session){
                        geom = "point",
                        size = 2,
                        color = "black")+
+          ggplot2::theme_bw()+
           theme(axis.text.x = element_text(size = 16),
                 axis.text.y = element_text(size = 12),
                 axis.title.x = element_blank(),
                 plot.title = element_text(size = 18,
                                           hjust = 0.5))+
-          ggtitle(paste(input$zonegenelist, " - Pseudocount CPM", sep = ""))
+          ggtitle(paste(input$zonegenelist, " - Pseudocount CPM", sep = ""))+
+          ggplot2::scale_fill_manual(values = c("#440154FF","#21908CFF"))
 
       })
       #Code for annotated cell type plot for hepatocyte subset
@@ -95,10 +111,9 @@ zonator <- function(id, data, parent_session){
                         label = T,
                         label.size = 6,
                         repel = T,
-                        cols = wesanderson::wes_palette(7,
-                                                        name = "FantasticFox1",
-                                                        type = "continuous"),
-                        label.box = F) +
+                        cols = c("#440154FF","#21908CFF"),
+                        label.box = T,
+                        label.color = "white") +
           ggplot2::ggtitle("DimPlot By Zone") +
           ggplot2::theme(
             plot.title = ggplot2::element_text(hjust = 0.5,
