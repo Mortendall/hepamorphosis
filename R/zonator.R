@@ -36,7 +36,7 @@ zonator <- function(id, data, parent_session){
         progress <- shiny::Progress$new()
         on.exit(progress$close())
         progress$set(message = "Loading Data, this might take a while...", value  = 0)
-        data$hepatocytesinglecell <- readRDS("data/hepatocyte_subset.rds")
+        data$hepatocytesinglecell <- readRDS("data/slimmedhepatocytes.rds")
         progress$inc(1/1, detail = "Loading Done!")
       })
 

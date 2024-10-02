@@ -5,24 +5,36 @@ library(tidyverse)
 
 geneexplorerui <- function(id){
   ns <- NS(id)
-  fluidPage(
-    fluidRow(
-      column(6,
-             actionButton(ns("loadsinglecell"),
-                          label = "Load single cell data"),
-             shiny::selectizeInput(inputId = ns("genelist"),
-                                   label = "Select gene from single cell dataset",
-                                   choices = NULL)
-    ),     column(6,
-             plotOutput(ns("featureplot"))
-             )),
-    fluidRow(
-      column(6,
-             uiOutput(outputId = ns("proteomicsviolin"))
-      ),     column(6,
-                    plotOutput(ns("celltypeplot"))
-      ))
-  )
+  bslib::page_sidebar(sidebar =
+    bslib::sidebar(actionButton(ns("loadsinglecell"),
+                                   label = "Load single cell data"),
+                      shiny::selectizeInput(inputId = ns("genelist"),
+                                            label = "Select gene from single cell dataset",
+                                            choices = NULL),
+                   bslib::tooltip(bsicons::bs_icon("info-circle",
+                                                   title = "About Gene Explorer"),
+                                  "Gene explorer allows the visualisation of gene
+                                  expression for individual cells. An overview of
+                                  cell types is included for convenience")),
+    bslib::layout_columns(col_widths = c(6,6),
+                          row_heights = c(2,2),
+                          bslib::card(bslib::card_title("Gene Expression",
+                                                        container = htmltools::h3),
+                            bslib::card_body(plotOutput(ns("featureplot"))),
+                            full_screen = T,
+                            align = "center"
+                                      ),
+                          bslib::card(bslib::card_title("Reference plot for cell types",
+                                                        container = htmltools::h3),
+                                      bslib::card_body( plotOutput(ns("celltypeplot"))),
+                                      align = "center"
+                                      ),
+                          bslib::card(bslib::card_title("Protein Abundance",
+                                                        container = htmltools::h3),
+                            bslib::card_body(uiOutput(outputId = ns("proteomicsviolin"))),
+                            align = "center")
+                            ))
+
 }
 
 geneexplorer <- function(id, data, parent_session){
@@ -32,24 +44,25 @@ geneexplorer <- function(id, data, parent_session){
       ns <- NS(id)
       req(data)
       geneselectormenu <- readRDS(here::here("data/geneselectormenu.rds"))
-      shiny::updateSelectizeInput(session,
-                                  "genelist",
-                                  choices = geneselectormenu,
-                                  selected = "Tbc1d4",
-                                  server = TRUE)
+
 
       observeEvent(input$loadsinglecell,{
         progress <- shiny::Progress$new()
         on.exit(progress$close())
         progress$set(message = "Loading Data, this might take a while...", value  = 0)
-        data$singlecell <- readRDS("data/updatedsinglecell.rds")
+        data$singlecell <- readRDS("data/slimmedsinglecelldata.rds")
+        shiny::updateSelectizeInput(session,
+                                    "genelist",
+                                    choices = geneselectormenu,
+                                    selected = "Tbc1d4",
+                                    server = TRUE)
         progress$inc(1/1, detail = "Loading Done!")
       })
 
       ##Gene selector list is based on the following code:
       # Generates a list of genes in dropdown menu based on what genes are found
       #in the single cell dataset
-      # singlecell <- readRDS("data/updatedsinglecell.rds")
+      # singlecell <- readRDS("data/slimmedsinglecelldata.rds")
       # geneselectormenu <- rownames(singlecell)
       # saveRDS(geneselectormenu, here::here("data/geneselectormenu.rds"))
 
@@ -91,6 +104,7 @@ geneexplorer <- function(id, data, parent_session){
       #the proteomics set
       output$violinplot <- renderPlot({
         req(data$violindata)
+
         ggplot2::ggplot(data$violindata, aes(x = Group,
                                              y = Abundance,
                                              fill = Group)
@@ -100,12 +114,15 @@ geneexplorer <- function(id, data, parent_session){
                        geom = "point",
                        size = 2,
                        color = "black")+
+          ggplot2::theme_bw()+
           theme(axis.text.x = element_text(size = 16),
                 axis.text.y = element_text(size = 12),
                 axis.title.x = element_blank(),
                 plot.title = element_text(size = 18,
-                                          hjust = 0.5))+
-          ggtitle(paste(input$genelist, " - Protein Abundance", sep = ""))
+                                          hjust = 0.5),
+                legend.position = "none")+
+          ggtitle(paste(input$genelist))+
+          ggplot2::scale_fill_manual(values = c("#440154FF","#21908CFF","#443A83FF"))
 
       })
 
@@ -114,16 +131,19 @@ geneexplorer <- function(id, data, parent_session){
       output$celltypeplot <- renderPlot({
         req(data$singlecell)
         Seurat::Idents(data$singlecell)<- "celltype"
+        dimplot_colors <- viridis::viridis(n = 7)
+        #some colors do not look too good. Change it
+        dimplot_colors[6]<-"black"
+        dimplot_colors[7]<-"#800000"
         Seurat::DimPlot(data$singlecell,
                                           pt.size = 0.7,
                                           label = T,
                                           label.size = 6,
                                           repel = T,
-                                          cols = wesanderson::wes_palette(7,
-                                                                          name = "FantasticFox1",
-                                                                          type = "continuous"),
-                                          label.box = F) +
-          ggplot2::ggtitle("DimPlot By Cell Type") +
+                                          cols = dimplot_colors,
+                                          label.box = T,
+                        label.color = "white",) +
+          ggplot2::ggtitle("") +
           ggplot2::theme(
             plot.title = ggplot2::element_text(hjust = 0.5,
                                                size = 24),
