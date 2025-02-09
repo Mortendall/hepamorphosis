@@ -1,17 +1,16 @@
 
 library(shiny)
-
+options(rsconnect.max.bundle.size=5368709120)
 
 # Define UI
 ui <- fluidPage(
   list(shiny::tags$head(shiny::HTML('<link rel="icon", href = "death-moth-clipart-md.png",
                                                   type = image/png" />'))),
-  shiny::div(style = "padding: 1px 0px; width: '100%'",
-             shiny::titlePanel(title = "Investigating primary mouse hepatocyte dedifferentiation",
-                               windowTitle = "Enter Hepamorphosis")),
+  shiny::div(style = "padding: 1px 0px; width: '100%'", titlePanel(title = "Hepamorphosis - Exploring Hepatocyte Dedifferentiation",
+                                                                   windowTitle = "Enter Hepamorphosis")),
 
   theme = bslib::bs_theme(version = 5, bootswatch = "sandstone"),
-  titlePanel("Hepamorphosis - Exploring Hepatocyte Dedifferentiation"),
+
   tabsetPanel(type = "tabs",
             id = "inTabset",
             tabPanel(title = "Home",

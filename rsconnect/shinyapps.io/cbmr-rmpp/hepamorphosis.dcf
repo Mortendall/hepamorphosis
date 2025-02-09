@@ -5,7 +5,7 @@ account: cbmr-rmpp
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 9120826
-bundleId: 9164310
+bundleId: 9772134
 url: https://cbmr-rmpp.shinyapps.io/hepamorphosis/
 asMultiple: FALSE
 asStatic: FALSE
